@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from googletrans import Translator
 from PIL import Image, ImageTk
+
 import requests  # For API calls
 
 # Initialize Translator
@@ -40,17 +41,17 @@ def get_definition():
     if not word:
         messagebox.showerror("Error", "Please enter a word to search.")
         return
-    
+
     url = f"https://api.dictionaryapi.dev/api/v2/entries/en/{word}"
-    
+
     try:
-        response = requests.get(url)
-        response.raise_for_status()  # Raise an error for bad response
+        response = requests.get(url, timeout=5)  # Timeout after 5 seconds
+        response.raise_for_status()  # Raise error if request fails
 
         data = response.json()
         if isinstance(data, list) and "meanings" in data[0]:
             definitions = [f"- {d['definition']}" for d in data[0]['meanings'][0]['definitions']]
-            meaning_text = "\n".join(definitions[:3])  # Display up to 3 definitions
+            meaning_text = "\n".join(definitions[:3])  # Show up to 3 definitions
         else:
             meaning_text = "Definition not found."
 
@@ -59,10 +60,8 @@ def get_definition():
         output_text.insert(tk.END, f"Definitions:\n{meaning_text}")
         output_text.config(state="disabled")
 
-    except requests.exceptions.RequestException:
-        messagebox.showerror("Error", "Failed to connect to the dictionary API.")
-    except (KeyError, IndexError):
-        messagebox.showerror("Error", "Word not found in the dictionary.")
+    except requests.exceptions.RequestException as e:
+        messagebox.showerror("Error", f"Failed to fetch definition:\n{e}")
 
 # Function to clear input & output text
 def clear_text():
